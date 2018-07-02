@@ -18,7 +18,7 @@ let show = true;
 function getPageUrl() {
     axios.get('https://dy.lujianqiang.com', {
         timeout: 4000
-    }).then(function (response) {
+    }).then((response) => {
         let package = require("./package.json");
         if (response.data.version > package.version) {
             win.webContents.send('version', 'update');
@@ -29,7 +29,7 @@ function getPageUrl() {
         } else {
             win.webContents.send('error', response.data.message);
         }
-    }).catch(function (error) {
+    }).catch((error) => {
         win.webContents.send('error', '请求失败，请检查网络环境以及与服务器连接是否正常');
     });
 }
@@ -68,7 +68,7 @@ function createWindow() {
 function isLoved(url) {
     db.find({
         url
-    }, function (err, docs) {
+    }, (err, docs) => {
         if (docs.length > 0) {
             win.webContents.send('isLoved', true);
         } else {
@@ -81,7 +81,7 @@ app.on("ready", () => {
     createWindow();
     win.loadFile("recommend.html");
 
-    globalShortcut.register('alt+q', function () {
+    globalShortcut.register('alt+q', () => {
         if (show) {
             win.hide();
             show = false;
@@ -105,7 +105,7 @@ app.on("window-all-closed", () => {
     }
 });
 
-ipc.on('refresh', function (event, message) {
+ipc.on('refresh', (event, message) => {
     if (pageUrl == null) {
         getPageUrl();
     } else {
@@ -115,40 +115,42 @@ ipc.on('refresh', function (event, message) {
     }
 });
 
-ipc.on('changeTab', function (event, message) {
+ipc.on('changeTab', (event, message) => {
     win.loadFile(message);
 });
 
-ipc.on('play', function (event, url) {
+ipc.on('play', (event, url) => {
     pageUrl = url;
     win.loadFile("recommend.html");
 });
 
-ipc.on('love', function (event, message) {
+ipc.on('love', (event, message) => {
     let doc = {
         "url": message.url,
         "description": message.description,
         "cover": message.cover,
         "time": Date.now()
     };
-    db.insert(doc, function (err, newDoc) {
+    db.insert(doc, (err, newDoc) => {
         isLoved(message.url);
     });
 });
-ipc.on('getPageUrl', function (event, message) {
+ipc.on('getPageUrl', (event, message) => {
     getPageUrl();
 });
 
-ipc.on('unlove', function (event, url) {
+ipc.on('unlove', (event, url) => {
     db.remove({
         url
-    }, {}, function (err, numRemoved) {
+    }, {}, (err, numRemoved) => {
         isLoved(url);
     });
 });
 
-ipc.on('listLove', function (event, message) {
-    db.find({}, function (err, docs) {
+ipc.on('listLove', (event, message) => {
+    db.find({}).sort({
+        time: -1
+    }).exec((err, docs) => {
         win.webContents.send('listLove', docs);
-    })
+    });
 });

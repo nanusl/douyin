@@ -57,26 +57,27 @@
 </style>
 
 <body>
-    <div class="center">
-        <video id="video" controls loop autoplay height="500"></video>
+<div class="center">
+    <video id="video" controls loop autoplay height="500"></video>
+</div>
+<div id="version" class="center" style="display: none;">版本太低，请
+    <button class="mdui-btn mdui-btn-raised" action="outer" value="https://github.com/lujqme/douyin/releases">前往升级
+    </button>
+</div>
+<div id="info">
+    <img id="avatar" src="" alt="avatar">
+    <div>
+        <b>
+            <p id="username"></p>
+        </b>
+        <p id="description"></p>
     </div>
-    <div id="version" class="center" style="display: none;">版本太低，请
-        <button class="mdui-btn mdui-btn-raised" action="outer" value="https://github.com/lujqme/douyin/releases">前往升级</button>
-    </div>
-    <div id="info">
-        <img id="avatar" src="" alt="avatar">
-        <div>
-            <b>
-                <p id="username"></p>
-            </b>
-            <p id="description"></p>
-        </div>
-    </div>
-    <div id="tabs">
-        <button id="favourite" class="mdui-btn mdui-btn-raised" action="changeTab" value="favourite.html">收藏列表</button>
-        <button id="love" class="mdui-btn mdui-btn-raised" action="love">加入收藏</button>
-        <button id="unlove" class="mdui-btn mdui-btn-raised" action="unlove" style="display: none;">取消收藏</button>
-    </div>
+</div>
+<div id="tabs">
+    <button id="favourite" class="mdui-btn mdui-btn-raised" action="changeTab" value="favourite.html">收藏列表</button>
+    <button id="love" class="mdui-btn mdui-btn-raised" action="love">加入收藏</button>
+    <button id="unlove" class="mdui-btn mdui-btn-raised" action="unlove" style="display: none;">取消收藏</button>
+</div>
 </body>
 
 <script>
@@ -128,39 +129,37 @@
 
     function getVideoInfo(url) {
         axios.get(url, {
-                timeout: 4000
-            })
-            .then(function (response) {
-                const data = response.data;
-                let videoInfo = {
-                    avatar: "",
-                    username: "",
-                    videoSrc: "",
-                    description: "",
-                };
-                let avatar = data.match('<div class="avatar[^"]+"><img src="([^"]+)');
-                if (avatar) {
-                    videoInfo.avatar = avatar[1];
-                }
-                cover = data.match('cover: "([^"]+)')[1];
-                videoInfo.username = data.match('<p class="name.*?>(.*?)</p>')[1];
-                let _description = data.match('<p class="desc">(.*?)</p>');
-                if (_description) {
-                    description = _description[1];
-                    videoInfo.description = _description[1];
-                } else {
-                    ipcRenderer.send('getPageUrl', {});
-                    return;
-                }
-                videoInfo.videoSrc = data.match('playAddr: ?"([^"]+)')[1];
-                playIndex = index;
-                videos.push(videoInfo);
-                index++;
-                render(videoInfo);
-            })
-            .catch(function (error) {
-                ipcRenderer.send('refresh', null);
-            });
+            timeout: 4000
+        }).then(function (response) {
+            const data = response.data;
+            let videoInfo = {
+                avatar: "",
+                username: "",
+                videoSrc: "",
+                description: "",
+            };
+            let avatar = data.match('<div class="avatar[^"]+"><img src="([^"]+)');
+            if (avatar) {
+                videoInfo.avatar = avatar[1];
+            }
+            videoInfo.username = data.match('<p class="name.*?>(.*?)</p>')[1];
+            let _description = data.match('<p class="desc">(.*?)</p>');
+            if (_description) {
+                description = _description[1];
+                videoInfo.description = _description[1];
+            } else {
+                ipcRenderer.send('getPageUrl', {});
+                return;
+            }
+            cover = data.match('cover: "([^"]+)')[1];
+            videoInfo.videoSrc = data.match('playAddr: ?"([^"]+)')[1];
+            playIndex = index;
+            videos.push(videoInfo);
+            index++;
+            render(videoInfo);
+        }).catch(function (error) {
+            ipcRenderer.send('refresh', null);
+        });
     }
 
     function render(videoInfo) {
