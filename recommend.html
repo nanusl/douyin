@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>抖音桌面版 By Golmic</title>
+    <title></title>
     <link rel="stylesheet" href="node_modules/mdui/dist/css/mdui.min.css">
     <script src="node_modules/mdui/dist/js/mdui.min.js"></script>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
@@ -12,6 +12,10 @@
 <style>
     body {
         margin: 0;
+        background: linear-gradient(#030303 30%, #f6f6f6) no-repeat;
+        background-size: 100% 100%;
+        -moz-background-size: 100% 100%;
+        font-size: 18px;
     }
 
     img {
@@ -34,6 +38,7 @@
     }
 
     #tabs {
+        padding-top: 20px;
         text-align: center;
     }
 
@@ -46,7 +51,6 @@
     }
 
     a {
-        color: blue;
         text-decoration: underline;
     }
 </style>
@@ -68,19 +72,15 @@
         </div>
     </div>
     <div id="tabs">
+        <button id="favourite" class="mdui-btn mdui-btn-raised" action="changeTab" value="favourite.html">收藏列表</button>
         <button id="love" class="mdui-btn mdui-btn-raised" action="love">加入收藏</button>
         <button id="unlove" class="mdui-btn mdui-btn-raised" action="unlove" style="display: none;">取消收藏</button>
-        <button id="favourite" class="mdui-btn mdui-btn-raised" action="changeTab" value="favourite.html">收藏列表</button>
     </div>
-    <footer class="center">
-        <p>Made with love by
-            <a action="outer" value="https://github.com/lujqme/">Golmic</a> on
-            <a action="outer" value="https://github.com/lujqme/douyin">Github</a>
-        </p>
-    </footer>
 </body>
 
 <script>
+    let index = 0, playIndex = 0;
+    const videos = [];
     const electron = require('electron');
     const ipcRenderer = electron.ipcRenderer;
     const shell = require('electron').shell;
@@ -105,6 +105,25 @@
             document.getElementById('unlove').style.display = 'none';
         }
     });
+    ipcRenderer.on('prev', function (event, message) {
+        if (playIndex <= 0) {
+            playIndex = 0;
+        } else {
+            playIndex = playIndex - 1;
+        }
+        render(videos[playIndex]);
+    });
+
+    ipcRenderer.on('next', function (event, message) {
+        if (playIndex >= videos.length - 1) {
+            ipcRenderer.send('getPageUrl', {});
+            playIndex = playIndex - 1;
+            return;
+        } else {
+            playIndex = playIndex + 1;
+        }
+        render(videos[playIndex]);
+    });
 
     function getVideoInfo(url) {
         axios.get(url, {
@@ -112,23 +131,46 @@
             })
             .then(function (response) {
                 const data = response.data;
-                console.log(data);
-                const avatar = data.match('<div class="avatar[^"]+"><img src="([^"]+)')[1];
-                document.getElementById('avatar').setAttribute('src', avatar);
+                let videoInfo = {
+                    avatar: "",
+                    username: "",
+                    videoSrc: "",
+                    description: "",
+                };
+                let avatar = data.match('<div class="avatar[^"]+"><img src="([^"]+)');
+                if (avatar) {
+                    videoInfo.avatar = avatar[1];
+                }
                 cover = data.match('cover: "([^"]+)')[1];
-                const username = data.match('<p class="name.*?>(.*?)</p>')[1];
-                document.getElementById('username').innerText = username;
-                description = data.match('<p class="desc">(.*?)</p>')[1];
-                document.getElementById('description').innerText = description;
-                const videoSrc = data.match('playAddr: ?"([^"]+)')[1];
-                var video = document.getElementById('video');
-                video.setAttribute('src', videoSrc);
-                video.play();
+                videoInfo.username = data.match('<p class="name.*?>(.*?)</p>')[1];
+                let _description = data.match('<p class="desc">(.*?)</p>');
+                if (_description) {
+                    description = _description[1];
+                    videoInfo.description = _description[1];
+                } else {
+                    ipcRenderer.send('getPageUrl', {});
+                    return;
+                }
+                videoInfo.videoSrc = data.match('playAddr: ?"([^"]+)')[1];
+                playIndex = index;
+                videos.push(videoInfo);
+                index++;
+                render(videoInfo);
             })
             .catch(function (error) {
                 ipcRenderer.send('refresh', null);
             });
     }
+
+    function render(videoInfo) {
+        document.getElementById('avatar').setAttribute('src', videoInfo.avatar);
+        document.getElementById('username').innerText = videoInfo.username;
+        document.getElementById('description').innerText = videoInfo.description;
+        let video = document.getElementById('video');
+        video.setAttribute('src', videoInfo.videoSrc);
+        video.play();
+    }
+
     document.body.addEventListener('click', function (event) {
         if (!event.srcElement.hasAttribute("action")) {
             return

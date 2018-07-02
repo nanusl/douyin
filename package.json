@@ -6,6 +6,7 @@
   "author": "golmic",
   "license": "MIT",
   "scripts": {
+    "start": "electron .",
     "pack": "electron-builder --dir",
     "dist": "electron-builder && electron-builder --windows --x64"
   },
