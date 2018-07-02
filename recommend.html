@@ -27,6 +27,7 @@
     video {
         margin-top: 5px;
         max-width: 100%;
+        object-fit: cover;
     }
 
     p {
@@ -57,7 +58,7 @@
 
 <body>
     <div class="center">
-        <video id="video" controls loop preload="auto" height=500></video>
+        <video id="video" controls loop autoplay height="500"></video>
     </div>
     <div id="version" class="center" style="display: none;">版本太低，请
         <button class="mdui-btn mdui-btn-raised" action="outer" value="https://github.com/lujqme/douyin/releases">前往升级</button>

@@ -3,6 +3,7 @@ const {
     BrowserWindow
 } = require("electron");
 const ipc = require('electron').ipcMain
+const globalShortcut = require('electron').globalShortcut;
 const electronLocalshortcut = require("electron-localshortcut");
 const axios = require('axios');
 let userData = app.getPath('userData');
@@ -12,6 +13,7 @@ let Datastore = require('nedb'),
         autoload: true
     });
 let win, pageUrl;
+let show = true;
 
 function getPageUrl() {
     axios.get('https://dy.lujianqiang.com', {
@@ -40,7 +42,7 @@ function createWindow() {
             webSecurity: false
         }
     });
-/*    win.openDevTools();*/
+    /*win.openDevTools();*/
     electronLocalshortcut.register(win, "Down", () => {
         win.webContents.send('next', {});
     });
@@ -52,9 +54,11 @@ function createWindow() {
     electronLocalshortcut.register(win, "Left", () => {
         getPageUrl();
     });
+
     electronLocalshortcut.register(win, "Right", () => {
         getPageUrl();
     });
+
     win.on("closed", () => {
         win = null;
     });
@@ -76,6 +80,16 @@ function isLoved(url) {
 app.on("ready", () => {
     createWindow();
     win.loadFile("recommend.html");
+
+    globalShortcut.register('alt+q', function () {
+        if (show) {
+            win.hide();
+            show = false;
+        } else {
+            win.show();
+            show = true;
+        }
+    });
 });
 
 app.on("activate", () => {
