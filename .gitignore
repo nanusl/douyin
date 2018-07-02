@@ -72,7 +72,4 @@ typings/
 # Serverless directories
 .serverless
 
-DouYin-*/
-
-*.tar.gz
-*.zip
+dist/

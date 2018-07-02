@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>抖音桌面版 By Golmic</title>
+    <link rel="stylesheet" href="node_modules/mdui/dist/css/mdui.min.css">
+    <script src="node_modules/mdui/dist/js/mdui.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</head>
+
+<style>
+    body {
+        margin: 0;
+    }
+
+    img {
+        margin: 0 10px 0 10px;
+        width: 100px;
+        height: 100px;
+    }
+
+    video {
+        margin-top: 5px;
+        max-width: 100%;
+    }
+
+    p {
+        margin: 0 10px 5px 0;
+    }
+
+    #info {
+        display: flex;
+    }
+
+    #tabs {
+        text-align: center;
+    }
+
+    .center {
+        text-align: center;
+    }
+
+    footer {
+        margin-top: 10px;
+    }
+
+    a {
+        color: blue;
+        text-decoration: underline;
+    }
+</style>
+
+<body>
+    <div class="center">
+        <video id="video" controls loop preload="auto" height=500></video>
+    </div>
+    <div id="version" class="center" style="display: none;">版本太低，请
+        <button class="mdui-btn mdui-btn-raised" action="outer" value="https://github.com/lujqme/douyin/releases">前往升级</button>
+    </div>
+    <div id="info">
+        <img id="avatar" src="" alt="avatar">
+        <div>
+            <b>
+                <p id="username"></p>
+            </b>
+            <p id="description"></p>
+        </div>
+    </div>
+    <div id="tabs">
+        <button id="love" class="mdui-btn mdui-btn-raised" action="love">加入收藏</button>
+        <button id="unlove" class="mdui-btn mdui-btn-raised" action="unlove" style="display: none;">取消收藏</button>
+        <button id="favourite" class="mdui-btn mdui-btn-raised" action="changeTab" value="favourite.html">收藏列表</button>
+    </div>
+    <footer class="center">
+        <p>Made with love by
+            <a action="outer" value="https://github.com/lujqme/">Golmic</a> on
+            <a action="outer" value="https://github.com/lujqme/douyin">Github</a>
+        </p>
+    </footer>
+</body>
+
+<script>
+    const electron = require('electron');
+    const ipcRenderer = electron.ipcRenderer;
+    const shell = require('electron').shell;
+    let pageUrl, description, cover;
+    ipcRenderer.on('refresh', function (event, url) {
+        pageUrl = url;
+        document.getElementById('unlove').setAttribute('value', url);
+        getVideoInfo(pageUrl);
+    });
+    ipcRenderer.on('error', function (event, message) {
+        alert(message);
+    });
+    ipcRenderer.on('version', function (event, message) {
+        document.getElementById('version').style.display = 'block';
+    });
+    ipcRenderer.on('isLoved', function (event, isLoved) {
+        if (isLoved) {
+            document.getElementById('love').style.display = 'none';
+            document.getElementById('unlove').style.display = 'inline';
+        } else {
+            document.getElementById('love').style.display = 'inline';
+            document.getElementById('unlove').style.display = 'none';
+        }
+    });
+
+    function getVideoInfo(url) {
+        axios.get(url, {
+                timeout: 4000
+            })
+            .then(function (response) {
+                const data = response.data;
+                console.log(data);
+                const avatar = data.match('<div class="avatar[^"]+"><img src="([^"]+)')[1];
+                document.getElementById('avatar').setAttribute('src', avatar);
+                cover = data.match('cover: "([^"]+)')[1];
+                const username = data.match('<p class="name.*?>(.*?)</p>')[1];
+                document.getElementById('username').innerText = username;
+                description = data.match('<p class="desc">(.*?)</p>')[1];
+                document.getElementById('description').innerText = description;
+                const videoSrc = data.match('playAddr: ?"([^"]+)')[1];
+                var video = document.getElementById('video');
+                video.setAttribute('src', videoSrc);
+                video.play();
+            })
+            .catch(function (error) {
+                ipcRenderer.send('refresh', null);
+            });
+    }
+    document.body.addEventListener('click', function (event) {
+        if (!event.srcElement.hasAttribute("action")) {
+            return
+        }
+        let action = event.srcElement.attributes["action"].value;
+        if (action === 'love') {
+            ipcRenderer.send('love', {
+                url: pageUrl,
+                cover,
+                description
+            });
+            return
+        }
+        let value = event.srcElement.attributes["value"].value;
+        if (action === 'outer') {
+            shell.openExternal(value);
+            return
+        }
+        ipcRenderer.send(action, value);
+    });
+    window.onload = function () {
+        ipcRenderer.send('refresh', null);
+    }
+</script>
+
+</html>

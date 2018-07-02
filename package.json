@@ -1,14 +1,35 @@
 {
   "name": "douyin",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "douyin destop version",
   "main": "main.js",
   "author": "golmic",
   "license": "MIT",
+  "scripts": {
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder && electron-builder --windows --x64"
+  },
   "dependencies": {
-    "electron-localshortcut": "^3.1.0"
+    "axios": "^0.18.0",
+    "electron-localshortcut": "^3.1.0",
+    "mdui": "^0.4.1",
+    "nedb": "^1.8.0"
   },
   "devDependencies": {
-    "electron": "2.0.3"
+    "electron": "2.0.3",
+    "electron-builder": "^20.18.0"
+  },
+  "build": {
+    "appId": "com.golmic.douyin",
+    "mac": {
+      "target": [
+        "dmg"
+      ]
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    }
   }
 }

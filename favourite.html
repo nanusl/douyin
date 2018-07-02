@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+
+<style>
+    h1 {
+        text-align: center;
+    }
+
+    #loveList {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+    }
+
+    #tabs {
+        text-align: center;
+    }
+
+    .item {
+        height: 250px;
+        width: 48%;
+        margin: 1%;
+        color: aliceblue;
+        background-repeat: no-repeat;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .unlove {
+        margin-bottom: 10px;
+        text-align: center;
+    }
+</style>
+
+<head>
+    <meta charset="UTF-8">
+    <title>我的收藏 抖音桌面版 By Golmic</title>
+    <link rel="stylesheet" href="node_modules/mdui/dist/css/mdui.min.css">
+    <script src="node_modules/mdui/dist/js/mdui.min.js"></script>
+</head>
+
+
+<body>
+    <h1>我的收藏</h1>
+    <div id="loveList"></div>
+    <div id="tabs">
+        <button class="mdui-btn mdui-btn-raised" action="play" value="">推荐</button>
+    </div>
+</body>
+
+
+<script>
+    const electron = require('electron');
+    const ipcRenderer = electron.ipcRenderer;
+    window.onload = function () {
+        ipcRenderer.send('listLove', null);
+    }
+    ipcRenderer.on('isLoved', function (event, message) {
+        ipcRenderer.send('listLove', null);
+    });
+    ipcRenderer.on('listLove', function (event, list) {
+        let html = '';
+        list.forEach(element => {
+            html +=
+                `<div class="item" action="play" value="${element.url}" style="background-image:url(${element.cover})">
+                ${element.description}
+                <button class="unlove mdui-btn mdui-btn-raised" action="unlove" value="${element.url}">取消收藏</button>
+                </div>`
+        });
+        document.getElementById('loveList').innerHTML = html;
+    });
+    document.body.addEventListener('click', function (event) {
+        if (!event.srcElement.hasAttribute("action")) {
+            return
+        }
+        let action = event.srcElement.attributes["action"].value;
+        let value = event.srcElement.attributes["value"].value;
+        ipcRenderer.send(action, value);
+    });
+</script>
+
+</html>
