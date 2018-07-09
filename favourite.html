@@ -51,24 +51,24 @@
 
 
 <body>
-    <h1>我的收藏</h1>
-    <div id="loveList"></div>
-    <div id="tabs">
-        <button class="mdui-btn mdui-btn-raised" action="play" value="">推荐</button>
-    </div>
+<h1>我的收藏</h1>
+<div id="loveList"></div>
+<div id="tabs">
+    <button class="mdui-btn mdui-btn-raised" action="play" value="">推荐</button>
+</div>
 </body>
 
 
 <script>
     const electron = require('electron');
     const ipcRenderer = electron.ipcRenderer;
-    window.onload = function () {
+    window.onload = () => {
         ipcRenderer.send('listLove', null);
     }
-    ipcRenderer.on('isLoved', function (event, message) {
+    ipcRenderer.on('isLoved', (event, message) => {
         ipcRenderer.send('listLove', null);
     });
-    ipcRenderer.on('listLove', function (event, list) {
+    ipcRenderer.on('listLove', (event, list) => {
         let html = '';
         list.forEach(element => {
             html +=
@@ -79,7 +79,7 @@
         });
         document.getElementById('loveList').innerHTML = html;
     });
-    document.body.addEventListener('click', function (event) {
+    document.body.addEventListener('click', (event) => {
         if (!event.srcElement.hasAttribute("action")) {
             return
         }

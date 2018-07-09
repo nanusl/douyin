@@ -47,10 +47,6 @@
         text-align: center;
     }
 
-    footer {
-        margin-top: 10px;
-    }
-
     a {
         text-decoration: underline;
     }
@@ -59,10 +55,6 @@
 <body>
 <div class="center">
     <video id="video" controls loop autoplay height="500"></video>
-</div>
-<div id="version" class="center" style="display: none;">版本太低，请
-    <button class="mdui-btn mdui-btn-raised" action="outer" value="https://github.com/lujqme/douyin/releases">前往升级
-    </button>
 </div>
 <div id="info">
     <img id="avatar" src="" alt="avatar">
@@ -87,18 +79,25 @@
     const ipcRenderer = electron.ipcRenderer;
     const shell = require('electron').shell;
     let pageUrl, description, cover;
-    ipcRenderer.on('refresh', function (event, url) {
+    ipcRenderer.on('refresh', (event, url) => {
         pageUrl = url;
         document.getElementById('unlove').setAttribute('value', url);
         getVideoInfo(pageUrl);
     });
-    ipcRenderer.on('error', function (event, message) {
+    ipcRenderer.on('error', (event, message) => {
         alert(message);
     });
-    ipcRenderer.on('version', function (event, message) {
+    ipcRenderer.on('pause', (event, message) => {
+        let video = document.getElementById('video');
+        if (video.paused)
+            video.play();
+        else
+            video.pause();
+    });
+    ipcRenderer.on('version', (event, message) => {
         document.getElementById('version').style.display = 'block';
     });
-    ipcRenderer.on('isLoved', function (event, isLoved) {
+    ipcRenderer.on('isLoved', (event, isLoved) => {
         if (isLoved) {
             document.getElementById('love').style.display = 'none';
             document.getElementById('unlove').style.display = 'inline';
@@ -107,7 +106,7 @@
             document.getElementById('unlove').style.display = 'none';
         }
     });
-    ipcRenderer.on('prev', function (event, message) {
+    ipcRenderer.on('prev', (event, message) => {
         if (playIndex <= 0) {
             playIndex = 0;
         } else {
@@ -116,7 +115,7 @@
         render(videos[playIndex]);
     });
 
-    ipcRenderer.on('next', function (event, message) {
+    ipcRenderer.on('next', (event, message) => {
         if (playIndex >= videos.length - 1) {
             ipcRenderer.send('getPageUrl', {});
             playIndex = playIndex - 1;
@@ -130,9 +129,10 @@
     function getVideoInfo(url) {
         axios.get(url, {
             timeout: 4000
-        }).then(function (response) {
+        }).then((response) => {
             const data = response.data;
             let videoInfo = {
+                url: url,
                 avatar: "",
                 username: "",
                 videoSrc: "",
@@ -157,12 +157,13 @@
             videos.push(videoInfo);
             index++;
             render(videoInfo);
-        }).catch(function (error) {
+        }).catch((error) => {
             ipcRenderer.send('refresh', null);
         });
     }
 
     function render(videoInfo) {
+        ipcRenderer.send('isLoved', videoInfo);
         document.getElementById('avatar').setAttribute('src', videoInfo.avatar);
         document.getElementById('username').innerText = videoInfo.username;
         document.getElementById('description').innerText = videoInfo.description;
@@ -171,7 +172,7 @@
         video.play();
     }
 
-    document.body.addEventListener('click', function (event) {
+    document.body.addEventListener('click', (event) => {
         if (!event.srcElement.hasAttribute("action")) {
             return
         }
@@ -191,7 +192,7 @@
         }
         ipcRenderer.send(action, value);
     });
-    window.onload = function () {
+    window.onload = () => {
         ipcRenderer.send('refresh', null);
     }
 </script>

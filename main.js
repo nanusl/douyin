@@ -2,7 +2,7 @@ const {
     app,
     BrowserWindow
 } = require("electron");
-const ipc = require('electron').ipcMain
+const ipc = require('electron').ipcMain;
 const globalShortcut = require('electron').globalShortcut;
 const electronLocalshortcut = require("electron-localshortcut");
 const axios = require('axios');
@@ -12,32 +12,42 @@ let Datastore = require('nedb'),
         filename: userData + 'ne.db',
         autoload: true
     });
-let win, pageUrl;
+let win, pageUrl, riskInfos = [], cursor = 0;
 let show = true;
 
 function getPageUrl() {
-    axios.get('https://dy.lujianqiang.com', {
-        timeout: 4000
-    }).then((response) => {
-        let package = require("./package.json");
-        if (response.data.version > package.version) {
-            win.webContents.send('version', 'update');
-        }
-        if (response.data.code === 0) {
-            win.webContents.send('refresh', response.data.url);
-            isLoved(response.data.url);
-        } else {
-            win.webContents.send('error', response.data.message);
-        }
-    }).catch((error) => {
-        win.webContents.send('error', '请求失败，请检查网络环境以及与服务器连接是否正常');
-    });
+    if (riskInfos.length === 0) {
+        axios.get('https://www.welltool.net/dbTest', {
+            timeout: 4000,
+            params: {
+                cursor: cursor,
+                count: 6
+            }
+        }).then((response) => {
+            if (response.data.status === 0) {
+                riskInfos = response.data.data;
+                cursor = response.data.cursor;
+                getRiskInfo(riskInfos.shift());
+            } else {
+                win.webContents.send('error', 'error');
+            }
+        }).catch((error) => {
+            win.webContents.send('error', '请求失败，请检查网络环境以及与服务器连接是否正常');
+        });
+    } else {
+        getRiskInfo(riskInfos.shift());
+    }
+}
+
+function getRiskInfo(info) {
+    win.webContents.send('refresh', info.share_url);
+    //isLoved(info.share_url);
 }
 
 function createWindow() {
     win = new BrowserWindow({
         width: 350,
-        height: 750,
+        height: 800,
         webPreferences: {
             webSecurity: false
         }
@@ -89,6 +99,7 @@ app.on("ready", () => {
             win.show();
             show = true;
         }
+        win.webContents.send('pause', {});
     });
 });
 
@@ -135,9 +146,14 @@ ipc.on('love', (event, message) => {
         isLoved(message.url);
     });
 });
+
 ipc.on('getPageUrl', (event, message) => {
     getPageUrl();
 });
+
+ipc.on("isLoved", (event, message) => {
+    isLoved(message.url);
+})
 
 ipc.on('unlove', (event, url) => {
     db.remove({
