@@ -1,5 +1,5 @@
-##2018年7月9日 更新
-由于原作者停止维护,接口地址变更为:www.welltool.net,可以继续moyu了..
+## 2018年7月9日 更新
+由于原作者停止维护,接口地址变更为:[www.welltool.net](https://www.welltool.net/douyinweb),可以继续moyu了..
 
 ## 说明
 稍作调整,方便自己用。。。
