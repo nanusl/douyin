@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        h1 {
+            word-wrap: break-word;
+        }
+
+        a {
+            color: blue;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>当前版本太低，请前往
+        <a action="outer" value="https://github.com/lujqme/douyin">https://github.com/lujqme/douyin</a>
+        升级
+    </h1>
+</body>
+
+<script>
+    const shell = require('electron').shell;
+    document.body.addEventListener('click', function (event) {
+        if (!event.srcElement.hasAttribute("action")) {
+            return
+        }
+        let action = event.srcElement.attributes["action"].value;
+        let value = event.srcElement.attributes["value"].value;
+        if (action === 'outer') {
+            shell.openExternal(value);
+        }
+    });
+</script>
+
+</html>
