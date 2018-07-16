@@ -3,100 +3,72 @@
 
 <head>
     <meta charset="UTF-8">
-    <title></title>
+    <title>抖音桌面版 By Golmic</title>
+    <link rel="stylesheet" href="node_modules/dplayer/dist/DPlayer.min.css">
     <link rel="stylesheet" href="node_modules/mdui/dist/css/mdui.min.css">
+    <link rel="stylesheet" href="style.css">
     <script src="node_modules/mdui/dist/js/mdui.min.js"></script>
-    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="node_modules/axios/dist/axios.min.js"></script>
+    <script src="node_modules/dplayer/dist/DPlayer.min.js"></script>
 </head>
 
-<style>
-    body {
-        margin: 0;
-        background: linear-gradient(#030303 30%, #f6f6f6) no-repeat;
-        background-size: 100% 100%;
-        -moz-background-size: 100% 100%;
-        font-size: 18px;
-    }
-
-    img {
-        margin: 0 10px 0 10px;
-        width: 100px;
-        height: 100px;
-    }
-
-    video {
-        margin-top: 5px;
-        max-width: 100%;
-    }
-
-    p {
-        margin: 0 10px 5px 0;
-    }
-
-    #info {
-        display: flex;
-    }
-
-    #tabs {
-        padding-top: 20px;
-        text-align: center;
-    }
-
-    .center {
-        text-align: center;
-    }
-
-    a {
-        text-decoration: underline;
-    }
-</style>
-
 <body>
-<div class="center">
-    <video id="video" controls loop autoplay height="500"></video>
-</div>
-<div id="info">
-    <img id="avatar" src="" alt="avatar">
-    <div>
-        <b>
-            <p id="username"></p>
-        </b>
-        <p id="description"></p>
+    <div id="dplayer" class="center"></div>
+    <div id="version" class="center" style="display: none;">发现更新，请
+        <button class="mdui-btn mdui-btn-raised" action="outer" value="https://github.com/lujqme/douyin/releases">前往升级</button>
     </div>
-</div>
-<div id="tabs">
-    <button id="favourite" class="mdui-btn mdui-btn-raised" action="changeTab" value="favourite.html">收藏列表</button>
-    <button id="love" class="mdui-btn mdui-btn-raised" action="love">加入收藏</button>
-    <button id="unlove" class="mdui-btn mdui-btn-raised" action="unlove" style="display: none;">取消收藏</button>
-</div>
+    <div id="info">
+        <img id="avatar" src="" alt="avatar">
+        <div>
+            <b>
+                <p id="username"></p>
+            </b>
+            <p id="description"></p>
+        </div>
+    </div>
+    <div id="tabs">
+        <button id="love" class="mdui-btn mdui-btn-raised" action="love">加入收藏</button>
+        <button id="unlove" class="mdui-btn mdui-btn-raised" action="unlove" style="display: none;">取消收藏</button>
+        <button id="favourite" class="mdui-btn mdui-btn-raised" action="changeTab" value="favourite.html">收藏列表</button>
+    </div>
+    <footer class="center">
+        <p>Made with love by
+            <a action="outer" value="https://github.com/lujqme/">Golmic</a> on
+            <a action="outer" value="https://github.com/lujqme/douyin">Github</a>
+        </p>
+    </footer>
 </body>
 
 <script>
-    let index = 0, playIndex = 0;
-    const videos = [];
     const electron = require('electron');
     const ipcRenderer = electron.ipcRenderer;
-    const shell = require('electron').shell;
-    let pageUrl, description, cover;
-    ipcRenderer.on('refresh', (event, url) => {
-        pageUrl = url;
-        document.getElementById('unlove').setAttribute('value', url);
+    const shell = electron.shell;
+    let pageUrl, comments, description, cover;
+    let dplayer = document.getElementById('dplayer')
+    const dp = new DPlayer({
+        container: dplayer,
+        loop: true,
+        volume: 0.7,
+        hotkey: false,
+        danmaku: {
+            id: 'douyin'
+        }
+    });
+    dp.danmaku.show();
+    document.getElementsByClassName('dplayer-comment')[0].style.display = 'none';
+    ipcRenderer.on('refresh', function (event, message) {
+        pageUrl = message.url;
+        comments = message.comments;
+        document.getElementById('unlove').setAttribute('value', pageUrl);
         getVideoInfo(pageUrl);
     });
-    ipcRenderer.on('error', (event, message) => {
+    ipcRenderer.on('error', function (event, message) {
         alert(message);
     });
-    ipcRenderer.on('pause', (event, message) => {
-        let video = document.getElementById('video');
-        if (video.paused)
-            video.play();
-        else
-            video.pause();
-    });
-    ipcRenderer.on('version', (event, message) => {
+    ipcRenderer.on('version', function (event, message) {
         document.getElementById('version').style.display = 'block';
     });
-    ipcRenderer.on('isLoved', (event, isLoved) => {
+    ipcRenderer.on('isLoved', function (event, isLoved) {
         if (isLoved) {
             document.getElementById('love').style.display = 'none';
             document.getElementById('unlove').style.display = 'inline';
@@ -105,73 +77,49 @@
             document.getElementById('unlove').style.display = 'none';
         }
     });
-    ipcRenderer.on('prev', (event, message) => {
-        if (playIndex <= 0) {
-            playIndex = 0;
-        } else {
-            playIndex = playIndex - 1;
-        }
-        render(videos[playIndex]);
-    });
 
-    ipcRenderer.on('next', (event, message) => {
-        if (playIndex >= videos.length - 1) {
-            ipcRenderer.send('getPageUrl', {});
-            playIndex = playIndex - 1;
-            return;
-        } else {
-            playIndex = playIndex + 1;
-        }
-        render(videos[playIndex]);
-    });
-
-    function getVideoInfo(url) {
-        axios.get(url, {
-            timeout: 4000
-        }).then((response) => {
-            const data = response.data;
-            let videoInfo = {
-                url: url,
-                avatar: "",
-                username: "",
-                videoSrc: "",
-                description: "",
-            };
-            let avatar = data.match('<div class="avatar[^"]+"><img src="([^"]+)');
-            if (avatar) {
-                videoInfo.avatar = avatar[1];
-            }
-            videoInfo.username = data.match('<p class="name.*?>(.*?)</p>')[1];
-            let _description = data.match('<p class="desc">(.*?)</p>');
-            if (_description) {
-                description = _description[1];
-                videoInfo.description = _description[1];
-            } else {
-                ipcRenderer.send('getPageUrl', {});
-                return;
-            }
-            cover = data.match('cover: "([^"]+)')[1];
-            videoInfo.videoSrc = data.match('playAddr: ?"([^"]+)')[1];
-            playIndex = index;
-            videos.push(videoInfo);
-            index++;
-            render(videoInfo);
-        }).catch((error) => {
-            ipcRenderer.send('refresh', null);
+    function draw(i) {
+        dp.danmaku.draw({
+            text: i,
+            color: '#fff',
+            type: 'right'
         });
     }
 
-    function render(videoInfo) {
-        ipcRenderer.send('isLoved', videoInfo);
-        document.getElementById('avatar').setAttribute('src', videoInfo.avatar);
-        document.getElementById('username').innerText = videoInfo.username;
-        document.getElementById('description').innerText = videoInfo.description;
-        let video = document.getElementById('video');
-        video.setAttribute('src', videoInfo.videoSrc);
-        video.play();
+    function getVideoInfo(url) {
+        axios.get(url, {
+                timeout: 4000
+            })
+            .then(function (response) {
+                const data = response.data;
+                const avatar = data.match('<div class="avatar[^"]+"><img src="([^"]+)')[1];
+                document.getElementById('avatar').setAttribute('src', avatar);
+                cover = data.match('cover: "([^"]+)')[1];
+                const username = data.match('<p class="name.*?>(.*?)</p>')[1];
+                document.getElementById('username').innerText = username;
+                description = data.match('<p class="desc">(.*?)</p>');
+                if (description !== null) {
+                    document.getElementById('description').innerText = description[1];
+                }
+                const videoSrc = data.match('playAddr: ?"([^"]+)')[1];
+                dp.switchVideo({
+                    url: videoSrc
+                });
+                dp.play();
+                comments.forEach(i => {
+                    setTimeout(() => {
+                        draw(i)
+                    }, Math.random() * 15000);
+                });
+            })
+            .catch(function (error) {
+                console.log(url);
+                console.log(error);
+                alert(error);
+                // ipcRenderer.send('refresh', null);
+            });
     }
-
-    document.body.addEventListener('click', (event) => {
+    document.body.addEventListener('click', function (event) {
         if (!event.srcElement.hasAttribute("action")) {
             return
         }
@@ -191,8 +139,9 @@
         }
         ipcRenderer.send(action, value);
     });
-    window.onload = () => {
+    window.onload = function () {
         ipcRenderer.send('refresh', null);
+        ipcRenderer.send('checkUpdate', null);
     }
 </script>
 

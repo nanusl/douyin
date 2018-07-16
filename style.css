@@ -1,0 +1,40 @@
+body {
+    margin: 0;
+}
+
+img {
+    margin: 0 10px 0 10px;
+    width: 100px !important;
+    height: 100px !important;
+}
+
+p {
+    margin: 0 10px 5px 0;
+}
+
+#info {
+    display: flex;
+}
+
+#tabs {
+    text-align: center;
+}
+
+#dplayer {
+    height: 500px;
+    margin: 5px 0;
+    max-width: 100%;
+}
+
+.center {
+    text-align: center;
+}
+
+footer {
+    margin-top: 10px;
+}
+
+a {
+    color: blue;
+    text-decoration: underline;
+}
