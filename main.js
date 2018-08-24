@@ -6,6 +6,7 @@ const ipc = require('electron').ipcMain;
 const globalShortcut = require('electron').globalShortcut;
 const electronLocalshortcut = require("electron-localshortcut");
 const axios = require('axios');
+const md5 = require('./md5.min.js');
 let userData = app.getPath('userData');
 let Datastore = require('nedb'),
     db = new Datastore({
@@ -17,12 +18,14 @@ let show = true;
 
 function getPageUrl() {
     if (riskInfos.length === 0) {
-        axios.get('https://www.welltool.net/dbTest', {
-            timeout: 4000,
-            params: {
-                cursor: cursor,
-                count: 6
-            }
+        let url = "https://www.welltool.net/dbTest?cursor=" + cursor + "&count=6";
+        let r = generateRandom().toString();
+        let parseTempStr = url + '@&^' + r;
+        let parseStr = generateStr(parseTempStr);
+        url = url + '&e=' + parseStr + '&r=' + r;
+        console.log(url);
+        axios.get(url, {
+            timeout: 4000
         }).then((response) => {
             if (response.data.status === 0) {
                 riskInfos = response.data.data;
@@ -39,6 +42,14 @@ function getPageUrl() {
     }
 }
 
+function generateRandom() {
+    return Math.random().toString(10).substring(2);
+}
+
+function generateStr(url) {
+    return md5(url);
+}
+
 function getRiskInfo(info) {
     win.webContents.send('refresh', info.share_url);
     //isLoved(info.share_url);
@@ -52,7 +63,7 @@ function createWindow() {
             webSecurity: false
         }
     });
-    /*win.openDevTools();*/
+    win.openDevTools();
     electronLocalshortcut.register(win, "Down", () => {
         win.webContents.send('next', {});
     });
