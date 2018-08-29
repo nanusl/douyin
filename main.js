@@ -18,13 +18,12 @@ let show = true;
 
 function getPageUrl() {
     if (riskInfos.length === 0) {
-        let url = "https://www.welltool.net/dbTest?cursor=" + cursor + "&count=6";
+        let url = "dbTest?cursor=" + cursor + "&count=6";
         let r = generateRandom().toString();
         let parseTempStr = url + '@&^' + r;
         let parseStr = generateStr(parseTempStr);
         url = url + '&e=' + parseStr + '&r=' + r;
-        console.log(url);
-        axios.get(url, {
+        axios.get('https://www.welltool.net/' + url, {
             timeout: 4000
         }).then((response) => {
             if (response.data.status === 0) {
